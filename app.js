@@ -1,7 +1,8 @@
 const express = require('express')
 const querystring = require('querystring')
 const mongoose = require('mongoose')
-const port = 3000
+import './messageModel'
+
 const app = express()
 
 // List of all messages
@@ -13,7 +14,7 @@ let users = {}
 app.use(express.static('./public'))
 app.use(express.json())
 
-mongoose.connect('mongodb://localhost/klack', {
+mongoose.connect('mongodb://localhost:27017/klack', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useFindAndModify: false,
@@ -24,12 +25,6 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once('open', function () {
   console.log("we're connected")
-})
-
-const messageSchema = mongoose.Schema({
-  sender: String,
-  message: String,
-  timestamp: Number,
 })
 
 // generic comparison function for case-insensitive alphabetic sorting on the name field
@@ -87,4 +82,9 @@ app.post('/messages', (request, response) => {
   response.send(request.body)
 })
 
-app.listen(3000)
+const port = process.env.PORT || 3000
+app.listen(port, () => console.log(`Server started on port ${port}...`))
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at: ', promise, 'reason:', reason)
+})
