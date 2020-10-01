@@ -2,6 +2,7 @@ const express = require('express')
 const querystring = require('querystring')
 const mongoose = require('mongoose')
 import './messageModel'
+import { MessageModel } from './messageModel'
 
 const app = express()
 
@@ -17,8 +18,8 @@ app.use(express.json())
 mongoose.connect('mongodb://localhost:27017/klack', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useFindAndModify: false,
-  useCreateIndex: true,
+  //   useFindAndModify: false,
+  //   useCreateIndex: true,
 })
 
 const db = mongoose.connection
@@ -42,15 +43,22 @@ function userSortFn(a, b) {
   return 0
 }
 
-app.get('/messages', (request, response) => {
+//TODO: make async
+app.get('/messages', async (request, response) => {
   // get the current time
   const now = Date.now()
 
   // consider users active if they have connected (GET or POST) in last 15 seconds
   const requireActiveSince = now - 15 * 1000
 
+  //TODO: list of msg = model
+  const messageList = await MessageModel.find((err, msg) => {
+    if (err) return console.error(err)
+  })
+
+  //!Had to add let here.
   // create a new list of users with a flag indicating whether they have been active recently
-  usersSimple = Object.keys(users).map((x) => ({
+  let usersSimple = Object.keys(users).map((x) => ({
     name: x,
     active: users[x] > requireActiveSince,
   }))
@@ -63,16 +71,25 @@ app.get('/messages', (request, response) => {
   users[request.query.for] = now
 
   // send the latest 40 messages and the full user list, annotated with active flags
-  response.send({ messages: messages.slice(-40), users: usersSimple })
+  //   response.send({ messages: messages.slice(-40), users: usersSimple })
+  response.send({ messages: messageList.slice(-40), users: usersSimple })
 })
 
-app.post('/messages', (request, response) => {
+//TODO: make async
+app.post('/messages', async (request, response) => {
   // add a timestamp to each incoming message.
   const timestamp = Date.now()
   request.body.timestamp = timestamp
 
+  //!change
   // append the new message to the message list
-  messages.push(request.body)
+  //   messages.push(request.body)
+  const message = new MessageModel(request.body)
+
+  message.save((err, msg) => {
+    if (err) return console.error(err)
+    console.log(msg)
+  })
 
   // update the posting user's last access timestamp (so we know they are active)
   users[request.body.sender] = timestamp
