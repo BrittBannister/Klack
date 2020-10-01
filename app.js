@@ -1,7 +1,7 @@
-const express = require('express')
-const querystring = require('querystring')
-const mongoose = require('mongoose')
-import './messageModel'
+import express from 'express'
+import querystring from 'querystring'
+import mongoose from 'mongoose'
+// import './messageModel'
 import { MessageModel } from './messageModel'
 
 const app = express()
@@ -43,7 +43,7 @@ function userSortFn(a, b) {
   return 0
 }
 
-//TODO: make async
+//*made async
 app.get('/messages', async (request, response) => {
   // get the current time
   const now = Date.now()
@@ -51,12 +51,12 @@ app.get('/messages', async (request, response) => {
   // consider users active if they have connected (GET or POST) in last 15 seconds
   const requireActiveSince = now - 15 * 1000
 
-  //TODO: list of msg = model
+  //*added
   const messageList = await MessageModel.find((err, msg) => {
     if (err) return console.error(err)
   })
 
-  //!Had to add let here.
+  //*had to add 'let'. Didn't work without it. I believe this was one of the bugs in the previous activity.
   // create a new list of users with a flag indicating whether they have been active recently
   let usersSimple = Object.keys(users).map((x) => ({
     name: x,
@@ -70,18 +70,19 @@ app.get('/messages', async (request, response) => {
   // update the requesting user's last access time
   users[request.query.for] = now
 
+  //! If I use line 75 it doesn't show other users. Line 76 shows all users and the current one active.
   // send the latest 40 messages and the full user list, annotated with active flags
   //   response.send({ messages: messages.slice(-40), users: usersSimple })
-  response.send({ messages: messageList.slice(-40), users: usersSimple })
+  response.send({ messages: messageList, users: usersSimple })
 })
 
-//TODO: make async
+//* made async
 app.post('/messages', async (request, response) => {
   // add a timestamp to each incoming message.
   const timestamp = Date.now()
   request.body.timestamp = timestamp
 
-  //!change
+  //*changed
   // append the new message to the message list
   //   messages.push(request.body)
   const message = new MessageModel(request.body)
